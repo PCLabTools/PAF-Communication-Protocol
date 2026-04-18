@@ -28,7 +28,10 @@ class Module:
     def __del__(self):
         """Unregisters the module from the protocol when it is destroyed
         """
-        self.protocol.unregister_module(self.address)
+        try:
+            self.protocol.unregister_module(self.address)
+        except:
+            pass
 
     def run(self):
         """Main loop for the module to continuously process incoming messages

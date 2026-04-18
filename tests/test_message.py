@@ -3,7 +3,7 @@ Unit tests for the Message class
 """
 import unittest
 from queue import PriorityQueue
-from ..message import Message
+from message import Message
 
 
 class TestMessage(unittest.TestCase):

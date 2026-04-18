@@ -4,8 +4,8 @@ Unit tests for the Protocol class
 import unittest
 import time
 from queue import PriorityQueue, Empty
-from ..protocol import Protocol, ProtocolError
-from ..message import Message
+from protocol import Protocol, ProtocolError
+from message import Message
 
 
 class TestProtocol(unittest.TestCase):

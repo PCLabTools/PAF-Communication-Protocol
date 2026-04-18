@@ -4,9 +4,9 @@ Unit tests for the Module class
 import unittest
 import time
 from queue import PriorityQueue
-from ..protocol import Protocol
-from ..message import Message
-from ..module import Module
+from protocol import Protocol
+from message import Message
+from module import Module
 
 
 class TestModule(Module):
@@ -53,6 +53,15 @@ class TestModuleClass(unittest.TestCase):
 
     def tearDown(self):
         """Clean up test fixtures"""
+        # Send shutdown to all registered modules to stop their threads
+        for module_name in self.protocol.get_registered_modules():
+            try:
+                self.protocol.send_action(module_name, "shutdown")
+            except:
+                pass
+        # Wait a bit for threads to finish
+        import time
+        time.sleep(0.1)
         # Clean up any registered modules
         for module_name in self.protocol.get_registered_modules():
             try:
