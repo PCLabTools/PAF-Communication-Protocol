@@ -48,18 +48,22 @@ class Module:
             bool: True if the module should stop running, False otherwise
         """
         if message.command == "shutdown":
+            if self.debug: print(f"{self.__class__.__name__} ({self.address}): Received shutdown command. Shutting down.")
             return True
         if message.command == "start":
+            if self.debug: print(f"{self.__class__.__name__} ({self.address}): Received start command. Starting background task.")
             if not self.background_task_running:
                 self.background_task_thread.start()
                 self.background_task_running = True
             return False
         if message.command == "stop":
+            if self.debug: print(f"{self.__class__.__name__} ({self.address}): Received stop command. Stopping background task.")
             if self.background_task_running:
                 self.background_task_running = False
                 self.background_task_thread.join()
             return False
         if message.command == "status":
+            if self.debug: print(f"{self.__class__.__name__} ({self.address}): Received status command. Sending status response.")
             self.protocol.send_response(message, f"Module {self.address} is {('running' if self.background_task_running else 'not running')}")
             return False
         raise NotImplementedError("Subclasses must implement handle_message method for {message.command} command")
