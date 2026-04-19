@@ -67,6 +67,10 @@ class Module:
                 if self.debug >= 99: print(f"{self.__class__.__name__} ({self.address}): Received shutdown command. Shutting down.")
             except:
                 pass
+            try:
+                self.protocol.unregister_module(self.address)
+            except:
+                pass
             return True
         if message.command == "start":
             try:
@@ -93,9 +97,9 @@ class Module:
                 pass
             self.protocol.send_response(message, f"Module {self.address} is {('running' if self.background_task_running else 'not running')}")
             return False
-        raise NotImplementedError("Subclasses must implement handle_message method for {message.command} command")
+        raise NotImplementedError(f"Subclasses must implement handle_message method for {message.command} command")
 
     def background_task(self):
         """Background task that the module can perform while running (optional)
         """
-        raise NotImplementedError("Subclasses can implement background_task method if needed for {self.address} module")
+        raise NotImplementedError(f"Subclasses can implement background_task method if needed for {self.address} module")
