@@ -7,6 +7,7 @@ author: PCLabTools (https://github.com/PCLabTools)
 from .protocol import Protocol
 from .message import Message
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 class Module:
     
@@ -26,7 +27,8 @@ class Module:
         except:
             pass
         self.thread.start()
-        self.background_task_thread = Thread(target=self.background_task)
+        self.background_task_executor = ThreadPoolExecutor(max_workers=1)
+        self.background_task_future = None
         self.background_task_running = False
 
     def __del__(self):
@@ -38,6 +40,12 @@ class Module:
             pass
         try:
             self.protocol.unregister_module(self.address)
+        except:
+            pass
+        try:
+            if self.background_task_future is not None:
+                self.background_task_future.cancel()
+            self.background_task_executor.shutdown(wait=False)
         except:
             pass
 
@@ -78,8 +86,8 @@ class Module:
             except:
                 pass
             if not self.background_task_running:
-                self.background_task_thread.start()
                 self.background_task_running = True
+                self.background_task_future = self.background_task_executor.submit(self.background_task)
             return False
         if message.command == "stop":
             try:
@@ -88,7 +96,7 @@ class Module:
                 pass
             if self.background_task_running:
                 self.background_task_running = False
-                self.background_task_thread.join()
+                # Don't block on result(); let the task exit naturally when it checks the flag
             return False
         if message.command == "status":
             try:
