@@ -21,15 +21,16 @@ class Module:
         self.address = address
         self.protocol = protocol
         self.protocol.register_module(self.address)
+        self.background_task_executor = ThreadPoolExecutor(max_workers=1)
+        self.background_task_future = None
+        self.background_task_running = False
+        self.running = True
         self.thread = Thread(target=self.run)
         try:
             if self.debug >= 99: print(f"{self.__class__.__name__} ({self.address}): Module initialized and registered with protocol.")
         except:
             pass
         self.thread.start()
-        self.background_task_executor = ThreadPoolExecutor(max_workers=1)
-        self.background_task_future = None
-        self.background_task_running = False
 
     def __del__(self):
         """Unregisters the module from the protocol when it is destroyed
@@ -43,9 +44,16 @@ class Module:
         except:
             pass
         try:
+            self.running = False
+            # Stop background task if running
+            self.background_task_running = False
             if self.background_task_future is not None:
-                self.background_task_future.cancel()
-            self.background_task_executor.shutdown(wait=False)
+                try:
+                    self.background_task_future.cancel()
+                except:
+                    pass
+            # Shutdown executor without waiting and cancel queued tasks
+            self.background_task_executor.shutdown(wait=False, cancel_futures=True)
         except:
             pass
 
@@ -56,8 +64,13 @@ class Module:
             if self.debug >= 99: print(f"{self.__class__.__name__} ({self.address}): Starting main loop.")
         except:
             pass
-        while True:
-            message = self.protocol.receive_message(self.address)
+        while self.running:
+            try:
+                message = self.protocol.receive_message(self.address, timeout=0.2)
+            except TimeoutError:
+                continue
+            except:
+                break
             if self.handle_message(message):
                 break
 
@@ -75,6 +88,8 @@ class Module:
                 if self.debug >= 99: print(f"{self.__class__.__name__} ({self.address}): Received shutdown command. Shutting down.")
             except:
                 pass
+            self.running = False
+            self.background_task_running = False
             try:
                 self.protocol.unregister_module(self.address)
             except:
